@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}预约挂号{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>选择科室</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('view_schedules') }}">
+            <div class="row">
+                <div class="col-md-6">
+                    <select name="dept_id" class="form-select" onchange="this.form.submit()">
+                        <option value="">所有科室</option>
+                        {% for dept in departments %}
+                            <option value="{{ dept.DeId }}" {% if dept.DeId == selected_dept %}selected{% endif %}>
+                                {{ dept.DeName }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-between">
+                        {# 注释上一周
+                        <a href="{{ url_for('view_schedules', dept_id=selected_dept, date=(start_date - timedelta(days=7)).strftime('%Y-%m-%d')) }}" 
+                           class="btn btn-outline-primary">上一周</a>
+                        #}
+                        <span class="align-self-center">
+                            {{ start_date.strftime('%Y-%m-%d') }} 至 {{ (start_date + timedelta(days=6)).strftime('%Y-%m-%d') }}
+                        </span>
+                        {#注释下一周
+                        <a href="{{ url_for('view_schedules', dept_id=selected_dept, date=(start_date + timedelta(days=7)).strftime('%Y-%m-%d')) }}" 
+                           class="btn btn-outline-primary">下一周</a>
+                        #}
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if schedules %}
+    {% for dept_name, doctors in schedules.items() %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>{{ dept_name }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered schedule-table">
+                        <thead>
+                            <tr>
+                                <th width="20%">医生</th>
+                                {% for date, weekday in zip(dates, weekdays) %}
+                                    <th>
+                                        {{ date.strftime('%m-%d') }}<br>
+                                        {{ weekday }}
+                                    </th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doctor_name, slots in doctors.items() %}
+                                <tr>
+                                    <td>{{ doctor_name }}</td>
+                                    {% for date, weekday in zip(dates, weekdays) %}
+                                        {% set day_slot_am = weekday + "_上午" %}
+                                        {% set day_slot_pm = weekday + "_下午" %}
+                                        <td class="p-0">
+                                            <div class="d-flex flex-column">
+                                                <!-- 上午时间段 -->
+                                                <div class="schedule-cell p-2 text-center border-bottom 
+                                                    {% if day_slot_am in slots %}
+                                                        {% if slots[day_slot_am]['available'] > 0 %}available{% else %}full{% endif %}
+                                                    {% endif %}">
+                                                    {% if day_slot_am in slots %}
+                                                        {% if slots[day_slot_am]['available'] > 0 %}
+                                                            <div>上午</div>
+                                                            <div>余{{ slots[day_slot_am]['available'] }} / {{ slots[day_slot_am]['max'] }}</div>
+                                                            <button class="btn btn-sm btn-primary book-btn" 
+                                                                    data-sid="{{ slots[day_slot_am]['sid'] }}"
+                                                                    data-did="{{ slots[day_slot_am]['did'] }}"
+                                                                    data-date="{{ date.strftime('%Y-%m-%d') }}"
+                                                                    data-timeslot="上午">
+                                                                预约
+                                                            </button>
+                                                        {% else %}
+                                                            <div>上午</div>
+                                                            <div>已满</div>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                </div>
+                                                <!-- 下午时间段 -->
+                                                <div class="schedule-cell p-2 text-center 
+                                                    {% if day_slot_pm in slots %}
+                                                        {% if slots[day_slot_pm]['available'] > 0 %}available{% else %}full{% endif %}
+                                                    {% endif %}">
+                                                    {% if day_slot_pm in slots %}
+                                                        {% if slots[day_slot_pm]['available'] > 0 %}
+                                                            <div>下午</div>
+                                                            <div>余{{ slots[day_slot_pm]['available'] }} / {{ slots[day_slot_pm]['max'] }}</div>
+                                                            <button class="btn btn-sm btn-primary book-btn" 
+                                                                    data-sid="{{ slots[day_slot_pm]['sid'] }}"
+                                                                    data-did="{{ slots[day_slot_pm]['did'] }}"
+                                                                    data-date="{{ date.strftime('%Y-%m-%d') }}"
+                                                                    data-timeslot="下午">
+                                                                预约
+                                                            </button>
+                                                        {% else %}
+                                                            <div>下午</div>
+                                                            <div>已满</div>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="alert alert-info">没有找到排班信息</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('.book-btn').click(function() {
+        if (confirm('确定要预约这个时间段吗？')) {
+            const sid = $(this).data('sid');
+            const did = $(this).data('did');
+            const date = $(this).data('date');
+            
+            $.post('{{ url_for("book_appointment") }}', {
+                sid: sid,
+                did: did,
+                date: date
+            }, function(data) {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            }).fail(function() {
+                alert('预约失败，请稍后再试');
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

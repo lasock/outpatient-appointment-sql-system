@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}首页{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1 class="display-4">欢迎使用门诊预约系统</h1>
+    <p class="lead">便捷的在线预约挂号服务，节省您的排队时间</p>
+    <hr class="my-4">
+    {% if 'uid' not in session %}
+        <p>请登录或注册以开始使用</p>
+        <div class="d-grid gap-2 d-md-block">
+            <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">登录</a>
+            <a href="{{ url_for('register') }}" class="btn btn-secondary btn-lg">注册</a>
+        </div>
+    {% else %}
+        <a href="{{ url_for('view_schedules') }}" class="btn btn-primary btn-lg">立即预约</a>
+    {% endif %}
+</div>
+{% endblock %}

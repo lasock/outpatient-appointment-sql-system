@@ -1,0 +1,14 @@
+# 虚拟环境
+sqlenv/
+
+# 编译文件
+__pycache__/
+
+# IDE
+.vecode/
+
+# 报告
+baogao/
+
+# test
+test/

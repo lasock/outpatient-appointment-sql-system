@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}个人中心{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>个人信息</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>姓名:</strong> {{ patient.Pname }}</p>
+                <p><strong>性别:</strong> {{ patient.Psex }}</p>
+                <p><strong>手机号:</strong> {{ patient.Pphone }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>我的预约</h5>
+            </div>
+            <div class="card-body">
+                {% if appointments %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>医生</th>
+                                    <th>科室</th>
+                                    <th>日期</th>
+                                    <th>时间段</th>
+                                    <th>状态</th>
+                                    <th>预约时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appt in appointments %}
+                                    <tr>
+                                        <td>{{ appt.Dname }}</td>
+                                        <td>{{ appt.DeName }}</td>
+                                        <td>{{ appt.ADate.strftime('%Y-%m-%d') }}</td>
+                                        <td>{{ appt.ATimeSlot }}</td>
+                                        <td>
+                                            {% if appt.Astatus == '待就诊' %}
+                                                <span class="badge bg-warning">{{ appt.Astatus }}</span>
+                                            {% elif appt.Astatus == '已完成' %}
+                                                <span class="badge bg-success">{{ appt.Astatus }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ appt.Astatus }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ appt.BookTime.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            {% if appt.Astatus == '待就诊' %}
+                                                <button class="btn btn-sm btn-danger cancel-btn" data-aid="{{ appt.Aid }}">取消</button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p>暂无预约记录</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('.cancel-btn').click(function() {
+        if (confirm('确定要取消这个预约吗？')) {
+            const aid = $(this).data('aid');
+            $.post('{{ url_for("cancel_appointment") }}', { aid: aid }, function(data) {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            }).fail(function() {
+                alert('操作失败，请稍后再试');
+            });
+        }
+    });
+});
+</script>
+{% endblock %}
